@@ -223,14 +223,14 @@ func formatPdnsRecordContent(record libdns.Record) string {
 	return record.Value
 }
 
-func getPriorityFromPdnsRecordContent(content string) int {
+func getPriorityFromPdnsRecordContent(content string) uint {
 	priority, err := strconv.Atoi(strings.Split(content, " ")[0])
 
 	if err != nil {
 		return 0
 	}
 
-	return priority
+	return uint(priority)
 }
 
 func getValueFromPdnsRecordContent(content string) string {
