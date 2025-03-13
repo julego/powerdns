@@ -39,13 +39,7 @@ func newClient(ServerID, ServerURL, APIToken string, debug io.Writer) (*client, 
 }
 
 func (c *client) updateRRs(ctx context.Context, zoneID string, recs []zones.ResourceRecordSet) error {
-	for _, rec := range recs {
-		err := c.Zones().AddRecordSetToZone(ctx, c.sID, zoneID, rec)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return c.Zones().AddRecordSetsToZone(ctx, c.sID, zoneID, recs)
 }
 
 func mergeRRecs(fullZone *zones.Zone, records []libdns.Record) ([]zones.ResourceRecordSet, error) {
