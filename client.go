@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/libdns/libdns"
@@ -74,7 +76,7 @@ func mergeRRecs(fullZone *zones.Zone, records []libdns.Record) ([]zones.Resource
 			for _, rec := range recs {
 				if !dupes[rec.Value] {
 					rr.Records = append(rr.Records, zones.Record{
-						Content: rec.Value,
+						Content: formatPdnsRecordContent(rec),
 					})
 					dupes[rec.Value] = true
 				}
@@ -120,7 +122,7 @@ func removeRecords(rRSet zones.ResourceRecordSet, culls []libdns.Record) zones.R
 		return recs
 	}
 	for _, c := range culls {
-		rRSet.Records = deleteItem(c.Value)
+		rRSet.Records = deleteItem(formatPdnsRecordContent(c))
 	}
 	return rRSet
 }
@@ -140,7 +142,7 @@ func convertLDHash(inHash map[string][]libdns.Record) []zones.ResourceRecordSet 
 		}
 		for _, rec := range recs {
 			rr.Records = append(rr.Records, zones.Record{
-				Content: rec.Value,
+				Content: formatPdnsRecordContent(rec),
 			})
 		}
 		rrsets = append(rrsets, rr)
@@ -210,4 +212,30 @@ func convertNamesToAbsolute(zone string, records []libdns.Record) []libdns.Recor
 		}
 	}
 	return out
+}
+
+func formatPdnsRecordContent(record libdns.Record) string {
+	switch record.Type {
+	case "MX", "SRV":
+		return fmt.Sprintf("%d %s", record.Priority, record.Value)
+	}
+
+	return record.Value
+}
+
+func getPriorityFromPdnsRecordContent(content string) uint {
+	priority, err := strconv.Atoi(strings.Split(content, " ")[0])
+	if err != nil {
+		return 0
+	}
+
+	return uint(priority)
+}
+
+func getValueFromPdnsRecordContent(content string) string {
+	if match, _ := regexp.MatchString("^\\d+ ", content); match {
+		return strings.Join(strings.Split(content, " ")[1:], " ")
+	}
+
+	return content
 }
